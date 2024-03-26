@@ -1,3 +1,7 @@
+function disabilitaBotaoAdicionar(){
+    
+}
+
 function criaElementosAdicionar(){
     //<label for="input_nova_tarefa">Digite sua nova tarefa:</label>
     //   <input type="text" id="input_nova_tarefa">
@@ -9,17 +13,22 @@ function criaElementosAdicionar(){
     novolabel.innerHTML = 'Digite sua nova tarefa:';
 
     const novoinput = document.createElement('input');
-    novoinput.setAttribute('id', 'text');
-    novoinput.setAttribute('type', 'input_nova_tarefa');
+    novoinput.setAttribute('id', 'input_nova_tarefa');
+    novoinput.setAttribute('type', 'text');
 
     const novolbutton = document.createElement('button');
+    novolbutton.setAttribute('id', 'mostrar_botao');
     novolbutton.setAttribute('onclick', `adicionaTarefaNaLista()`);
     novolbutton.innerHTML = '+';
-    novolbutton.disabled = true;
+    novolbutton.setAttribute('disabled', 'true');
 
     divTarefas.appendChild(novolabel);
     divTarefas.appendChild(novoinput);
     divTarefas.appendChild(novolbutton);
+
+    const input = document.getElementById("input_nova_tarefa");
+
+    adicionarEventListener(input)
 }
 
 function adicionaTarefaNaLista() {
@@ -60,7 +69,10 @@ function criaNovoItemDaLista(textoDaTarefa) {
     criarBotao.disabled = true;
     novoItem.appendChild(criarBotao);
 
-    listaTarefas.appendChild(novoItem)
+    const mostrarBotao = document.getElementById('mostrar_botao');
+    mostrarBotao.setAttribute('disabled', 'true');
+
+    listaTarefas.appendChild(novoItem);
 }
 
 
@@ -183,15 +195,17 @@ function mostrarElementosOcultados(){
 
 }
 
-function disabilitaBotaoAdicionar(){
-    if (input.value.length > 0) {
-        botao.disabled = false;
-    } else {
-        botao.disabled = true;
-    }
+function adicionarEventListener(input) {
+    input.addEventListener('input', function(event) {
+        const botao = document.getElementById("mostrar_botao");
+        if (input.value.length > 0) {
+            botao.disabled = false;
+        } else {
+            botao.disabled = true;
+        }
+    });
 }
 
 const input = document.getElementById("input_nova_tarefa");
-const botao = document.getElementById("mostrar_botao");
 
-input.addEventListener("input", disabilitaBotaoAdicionar);
+adicionarEventListener(input)
