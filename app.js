@@ -1,11 +1,23 @@
+function validaSeExisteTarefasNoLocalStorageEMostraNaTela() {
+    const localStorage = window.localStorage
+    if (localStorage.getItem('lista_tarefas') != null) {
+        const listaTarefas = JSON.parse(localStorage.getItem('lista_tarefas'))
+        listaTarefas.forEach(tarefa => {
+            if (tarefa.status === 'fechada') {
+                criaNovoItemDaLista(tarefa.descricao, false, false)  
+            }else{
+                criaNovoItemDaLista(tarefa.descricao, true, false)  
+            }
+        });
+    }
+}
+
 function disabilitaBotaoAdicionar(){
     
 }
 
 function criaElementosAdicionar(){
-    //<label for="input_nova_tarefa">Digite sua nova tarefa:</label>
-    //   <input type="text" id="input_nova_tarefa">
-    //   <button onclick="adicionaTarefaNaLista()">+</button>
+
     const divTarefas = document.getElementById('div_area_nova_tarefa');
 
     const novolabel = document.createElement('label');
@@ -32,15 +44,14 @@ function criaElementosAdicionar(){
 }
 
 function adicionaTarefaNaLista() {
-    // debugger - descomentar para acompanhar o fluxo da pagina
-    // seleciona o elemento de input text que tem o texto da nova tarefa
+
     const novaTarefa = document.getElementById('input_nova_tarefa');
-    criaNovoItemDaLista(novaTarefa.value);
+    criaNovoItemDaLista(novaTarefa.value, true, true);
     novaTarefa.value = "";
     disabilitaBotaoAdicionar();
 }
 
-function criaNovoItemDaLista(textoDaTarefa) {
+function criaNovoItemDaLista(textoDaTarefa, eDesabilitado, refreshDaPagina) {
     // recupera a lista de tarefas
     const listaTarefas = document.getElementById('lista_de_tarefas')
     // guarda o tamanho da lista de tarefas
@@ -52,31 +63,44 @@ function criaNovoItemDaLista(textoDaTarefa) {
 
     novoItem.id = `tarefa_id_${qtdTarefas++}`
 
-    // adiciona o texto digitado no texto da tarefa
-    novoItem.appendChild(criaInputCheckBoxTarefa(novoItem.id))
+    novoItem.appendChild(criaInputCheckBoxTarefa(novoItem.id, !eDesabilitado))
     
     textoItem.innerText = textoDaTarefa
-    novoItem.appendChild(textoItem)
-    // adiciona um ID no novo elemento
     
-    novoItem.appendChild(criaIconEditarItemLista(novoItem.id))
 
     const criarBotao = document.createElement('button');
     criarBotao.setAttribute('onclick', `ocultarElemento('${novoItem.id}')`);
-    criarBotao.setAttribute('id', `ocultar_'${novoItem.id}'`);
+    criarBotao.setAttribute('id', `ocultar_${novoItem.id}`);
     criarBotao.setAttribute('class', 'botao-ocultar');
-    criarBotao.innerHTML = 'Ocultar';
-    criarBotao.disabled = true;
+    criarBotao.innerText = 'Ocultar';
+    if(eDesabilitado){
+        criarBotao.disabled = true;
+    }else{
+        criarBotao.disabled = false;
+        textoItem.style = 'text-decoration: line-through;';
+    }
+    
+    novoItem.appendChild(textoItem)
+    novoItem.appendChild(criaIconEditarItemLista(novoItem.id))
     novoItem.appendChild(criarBotao);
 
     const mostrarBotao = document.getElementById('mostrar_botao');
-    mostrarBotao.setAttribute('disabled', 'true');
+    if(eDesabilitado){
+        mostrarBotao.setAttribute('disabled', 'true');
+    }else{
+        mostrarBotao.setAttribute('disabled', 'false');
+    }
 
     listaTarefas.appendChild(novoItem);
+
+    if(refreshDaPagina){
+        const tarefa = montaTarefa(novoItem.id, textoDaTarefa, 'aberta')
+        adicionaTarefaAListaLocalStorage(tarefa)
+    }
 }
 
 
-function criaInputCheckBoxTarefa(idTarefa) {
+function criaInputCheckBoxTarefa(idTarefa, checkboxMarcado) {
     // cria o elemento de input
     const inputTarefa = document.createElement('input')
     // seta o elemento para ser do tipo checkbox
@@ -84,6 +108,9 @@ function criaInputCheckBoxTarefa(idTarefa) {
     // seta o onclick do input
     inputTarefa.setAttribute('onclick', `mudaEstadoTarefa('${idTarefa}')`);
     inputTarefa.setAttribute('id', `checkbox_${idTarefa}`);
+    if(checkboxMarcado){
+        inputTarefa.checked = true;
+    }
     return inputTarefa
 }
 
@@ -132,7 +159,7 @@ function salvaEdicao(idTarefa){
     const textoDaTarefa = elementoValorEditar.value;
     elementoEditar.innerHTML = ''
 
-    elementoEditar.appendChild(criaInputCheckBoxTarefa(idTarefa));
+    elementoEditar.appendChild(criaInputCheckBoxTarefa(idTarefa, false));
     const textoTarefa = document.createElement('a');
     textoTarefa.setAttribute('id', `${idTarefa}`);
 
@@ -143,7 +170,7 @@ function salvaEdicao(idTarefa){
 
     const criarBotao = document.createElement('button');
     criarBotao.setAttribute('onclick', `ocultarElemento('${idTarefa}')`);
-    criarBotao.setAttribute('id', `ocultar_'${idTarefa}'`);
+    criarBotao.setAttribute('id', `ocultar_${idTarefa}`);
     criarBotao.setAttribute('class', 'botao-ocultar');
     criarBotao.innerHTML = 'Ocultar';
 
@@ -159,11 +186,12 @@ function salvaEdicao(idTarefa){
     removerElementos.innerHTML = ''
 
     criaElementosAdicionar()
+    mudaTextoTarefaLocalStorage(idTarefa, textoDaTarefa);
 }
 
 function mudaEstadoTarefa(idTarefa) {
     const tarefaSelecionada = document.getElementById(idTarefa).children[1];
-    const mostrarBotao = document.getElementById(`ocultar_'${idTarefa}'`);
+    const mostrarBotao = document.getElementById(`ocultar_${idTarefa}`);
     
     if (tarefaSelecionada.style.textDecoration == 'line-through') {
         tarefaSelecionada.style = 'text-decoration: none;'
@@ -171,7 +199,8 @@ function mudaEstadoTarefa(idTarefa) {
     } else {
         tarefaSelecionada.style = 'text-decoration: line-through;'
         mostrarBotao.disabled = false;
-    }    
+    }
+    mudaEstadoTarefaLocalStorage(idTarefa)
 }
 
 function ocultarElemento(idTarefa){
@@ -206,6 +235,64 @@ function adicionarEventListener(input) {
     });
 }
 
+function mudaTextoTarefaLocalStorage(idTarefa, textoEditado) {
+    const localStorage = window.localStorage
+    if (localStorage.getItem('lista_tarefas') != null) {
+        const listaTarefas = JSON.parse(localStorage.getItem('lista_tarefas'))
+        let contador = 0
+        listaTarefas.forEach(tarefa => {
+            if (tarefa.id === idTarefa) {
+                tarefa.descricao = textoEditado;
+            }
+            localStorage.setItem('lista_tarefas', JSON.stringify(listaTarefas))
+            contador++
+        });
+
+    }
+}
+
+function mudaEstadoTarefaLocalStorage(idTarefa) {
+    const localStorage = window.localStorage
+    if (localStorage.getItem('lista_tarefas') != null) {
+        const listaTarefas = JSON.parse(localStorage.getItem('lista_tarefas'))
+        let contador = 0
+        listaTarefas.forEach(tarefa => {
+            if (tarefa.id === idTarefa) {
+                if (tarefa.status === 'aberta') {
+                    tarefa.status = 'fechada'
+                } else {
+                    tarefa.status = 'aberta'
+                }
+                console.log(tarefa)
+            }
+            localStorage.setItem('lista_tarefas', JSON.stringify(listaTarefas))
+            contador++
+        });
+
+    }
+}
+
+function adicionaTarefaAListaLocalStorage(tarefa) {
+    const localStorage = window.localStorage
+    let listaTarefas = []
+    if (localStorage.getItem('lista_tarefas') != null) {
+        listaTarefas = JSON.parse(localStorage.getItem('lista_tarefas'))
+    }
+    listaTarefas.push(tarefa)
+    localStorage.setItem('lista_tarefas', JSON.stringify(listaTarefas))
+}
+
+function montaTarefa(idTarefa, textoTarefa, status) {
+    return {
+        id: idTarefa,
+        descricao: textoTarefa,
+        status: status
+    }
+}
+
 const input = document.getElementById("input_nova_tarefa");
 
 adicionarEventListener(input)
+
+// ao script ser carregado roda essa funcao
+validaSeExisteTarefasNoLocalStorageEMostraNaTela()
