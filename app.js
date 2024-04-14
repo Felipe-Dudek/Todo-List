@@ -177,8 +177,10 @@ function salvaEdicao(idTarefa){
     if(checadoOuNao.textDecoration == 'line-through'){
         document.getElementById(`checkbox_${idTarefa}`).checked = true;
         criarBotao.disabled = false;
+        mudaEstadoTarefaLocalStorage(idTarefa, true)
     }else{
         criarBotao.disabled = true;
+        mudaEstadoTarefaLocalStorage(idTarefa, false)
     }
     elementoEditar.appendChild(criarBotao);
 
@@ -196,11 +198,13 @@ function mudaEstadoTarefa(idTarefa) {
     if (tarefaSelecionada.style.textDecoration == 'line-through') {
         tarefaSelecionada.style = 'text-decoration: none;'
         mostrarBotao.disabled = true;
+        mudaEstadoTarefaLocalStorage(idTarefa, false)
     } else {
         tarefaSelecionada.style = 'text-decoration: line-through;'
         mostrarBotao.disabled = false;
+        mudaEstadoTarefaLocalStorage(idTarefa, true)
     }
-    mudaEstadoTarefaLocalStorage(idTarefa)
+    
 }
 
 function ocultarElemento(idTarefa){
@@ -251,14 +255,14 @@ function mudaTextoTarefaLocalStorage(idTarefa, textoEditado) {
     }
 }
 
-function mudaEstadoTarefaLocalStorage(idTarefa) {
+function mudaEstadoTarefaLocalStorage(idTarefa, eFinalizada) {
     const localStorage = window.localStorage
     if (localStorage.getItem('lista_tarefas') != null) {
         const listaTarefas = JSON.parse(localStorage.getItem('lista_tarefas'))
         let contador = 0
         listaTarefas.forEach(tarefa => {
             if (tarefa.id === idTarefa) {
-                if (tarefa.status === 'aberta') {
+                if (eFinalizada) {
                     tarefa.status = 'fechada'
                 } else {
                     tarefa.status = 'aberta'
